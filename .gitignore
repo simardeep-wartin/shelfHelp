@@ -2,4 +2,5 @@ node_modules/
 .env
 responses.json
 eval.log
+ask.log
 notes/bugs.md

@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["run.ts", "src", "tests", "evals"]
+  "include": ["run.ts", "ask.ts","src", "tests", "evals"]
 }

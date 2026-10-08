@@ -47,6 +47,15 @@ Output, one response per request:
 - On Windows PowerShell 5.1, `>` writes UTF-16. Use Git Bash, or
   `npx tsx run.ts requests.json | Out-File -Encoding utf8 responses.json`.
 
+## Try it interactively
+
+```bash
+npm run ask
+```
+
+Type a customer request and press Enter to see the JSON response. Type `exit` to quit.
+Logs, including what the model extracted from each request, go to `ask.log`.
+
 ## Tests
 
 ```bash
