@@ -53,6 +53,29 @@ export const EVAL_CASES: EvalCase[] = [
       return failures;
     },
   },
+  // Caught bug 1: a stated quantity was treated as a minimum, so we sold 4 lime
+  {
+    name: "Exact quantity: just 2 cases of lime",
+    text: "₹900. Just 2 cases of lime.",
+    check: (response) => {
+      const failures = checkStatus(response, "recommendation");
+      if (quantityOf(response, "LIME") !== 2) failures.push("expected exactly 2 lime, got " + quantityOf(response, "LIME"));
+      if (response.items.length !== 1) failures.push("expected only lime, got " + JSON.stringify(response.items));
+      failures.push(...checkRealOrder(response, 900));
+      return failures;
+    },
+  },
+  // Caught bug 2: "berry if available" became a hard requirement -> cannot_fulfil
+  {
+    name: "Conditional: berry if available, otherwise lime",
+    text: "₹900. Berry fizz if available, otherwise lime.",
+    check: (response) => {
+      const failures = checkStatus(response, "recommendation");
+      if (quantityOf(response, "LIME") < 1) failures.push("lime missing");
+      failures.push(...checkRealOrder(response, 900)); // also fails if out-of-stock berry is included
+      return failures;
+    },
+  },
 ];
 
 // ---------- Property helpers ----------
