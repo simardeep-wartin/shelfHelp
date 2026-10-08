@@ -43,6 +43,8 @@ export const ItemSchema = z.object({
   quantity: z.number().int().positive(), // whole number of cases, at least 1
 });
 
+export type Item = z.infer<typeof ItemSchema>;
+
 export const ResponseSchema = z
   .object({
     status: z.enum(["recommendation", "clarification", "cannot_fulfil"]),

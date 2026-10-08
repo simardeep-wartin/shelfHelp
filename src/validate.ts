@@ -2,9 +2,7 @@
 // Checks a response against every business rule, in code, without trusting
 // whoever produced it. Returns a list of violations; an empty list means valid.
 import { findProduct } from "./catalogue";
-import { ResponseSchema, type Extraction, type OrderResponse } from "./schema";
-
-type Item = OrderResponse["items"][number];
+import { ResponseSchema, type Extraction, type Item } from "./schema";
 
 export function validateResponse(rawResponse: unknown, extraction: Extraction): string[] {
   // 1. Shape: correct fields, known status, catalogue SKUs, whole-number quantities
@@ -24,15 +22,21 @@ export function validateResponse(rawResponse: unknown, extraction: Extraction): 
   }
 
   // 2. Business rules for an actual order
+  return checkOrderRules(response.items, response.total, extraction);
+}
+
+// Every business rule an order must follow. The solver also uses this,
+// so adding a rule here stops the solver from ever proposing an order that breaks it.
+export function checkOrderRules(items: Item[], total: number, extraction: Extraction): string[] {
   const violations: string[] = [];
   checkBudgetIsKnown(extraction, violations);
-  checkNoDuplicateSkus(response.items, violations);
-  checkInStock(response.items, violations);
-  checkTotalIsCorrect(response.items, response.total, violations);
-  checkWithinBudget(response.total, extraction, violations);
-  checkOnlyPreference(response.items, extraction, violations);
-  checkExclusions(response.items, extraction, violations);
-  checkRequiredMinimums(response.items, extraction, violations);
+  checkNoDuplicateSkus(items, violations);
+  checkInStock(items, violations);
+  checkTotalIsCorrect(items, total, violations);
+  checkWithinBudget(total, extraction, violations);
+  checkOnlyPreference(items, extraction, violations);
+  checkExclusions(items, extraction, violations);
+  checkRequiredMinimums(items, extraction, violations);
   return violations;
 }
 
