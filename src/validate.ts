@@ -1,0 +1,126 @@
+// The rule harness.
+// Checks a response against every business rule, in code, without trusting
+// whoever produced it. Returns a list of violations; an empty list means valid.
+import { findProduct } from "./catalogue";
+import { ResponseSchema, type Extraction, type OrderResponse } from "./schema";
+
+type Item = OrderResponse["items"][number];
+
+export function validateResponse(rawResponse: unknown, extraction: Extraction): string[] {
+  // 1. Shape: correct fields, known status, catalogue SKUs, whole-number quantities
+  const parsed = ResponseSchema.safeParse(rawResponse);
+  if (!parsed.success) {
+    const violations: string[] = [];
+    for (const issue of parsed.error.issues) {
+      violations.push("invalid shape at '" + issue.path.join(".") + "': " + issue.message);
+    }
+    return violations;
+  }
+  const response = parsed.data;
+
+  // clarification and cannot_fulfil have no items, so the shape check is enough
+  if (response.status !== "recommendation") {
+    return [];
+  }
+
+  // 2. Business rules for an actual order
+  const violations: string[] = [];
+  checkBudgetIsKnown(extraction, violations);
+  checkNoDuplicateSkus(response.items, violations);
+  checkInStock(response.items, violations);
+  checkTotalIsCorrect(response.items, response.total, violations);
+  checkWithinBudget(response.total, extraction, violations);
+  checkOnlyPreference(response.items, extraction, violations);
+  checkExclusions(response.items, extraction, violations);
+  checkRequiredMinimums(response.items, extraction, violations);
+  return violations;
+}
+
+// We must never recommend an order without a clear budget
+function checkBudgetIsKnown(extraction: Extraction, violations: string[]) {
+  if (extraction.budget === null || extraction.budgetUnclear) {
+    violations.push("recommended an order without a clear budget");
+  }
+}
+
+function checkNoDuplicateSkus(items: Item[], violations: string[]) {
+  const seen: string[] = [];
+  for (const item of items) {
+    if (seen.includes(item.sku)) {
+      violations.push(item.sku + " appears more than once");
+    }
+    seen.push(item.sku);
+  }
+}
+
+// Product exists, is in stock, and quantity does not exceed stock
+function checkInStock(items: Item[], violations: string[]) {
+  for (const item of items) {
+    const product = findProduct(item.sku);
+    if (product === undefined) {
+      violations.push(item.sku + " is not in the catalogue");
+      continue;
+    }
+    if (product.stock === 0) {
+      violations.push(item.sku + " is out of stock");
+    } else if (item.quantity > product.stock) {
+      violations.push(item.sku + " quantity " + item.quantity + " exceeds stock " + product.stock);
+    }
+  }
+}
+
+// The total must equal what the catalogue prices add up to (no invented prices or discounts)
+function checkTotalIsCorrect(items: Item[], total: number, violations: string[]) {
+  let expectedTotal = 0;
+  for (const item of items) {
+    const product = findProduct(item.sku);
+    if (product !== undefined) {
+      expectedTotal = expectedTotal + product.price * item.quantity;
+    }
+  }
+  if (total !== expectedTotal) {
+    violations.push("total is " + total + " but catalogue prices add up to " + expectedTotal);
+  }
+}
+
+function checkWithinBudget(total: number, extraction: Extraction, violations: string[]) {
+  if (extraction.budget !== null && total > extraction.budget) {
+    violations.push("total " + total + " is over the budget of " + extraction.budget);
+  }
+}
+
+// "Only mango" -> every item must be in the only-list
+function checkOnlyPreference(items: Item[], extraction: Extraction, violations: string[]) {
+  if (extraction.onlySkus.length === 0) {
+    return;
+  }
+  for (const item of items) {
+    if (!extraction.onlySkus.includes(item.sku)) {
+      violations.push(item.sku + " is not in the customer's 'only' list");
+    }
+  }
+}
+
+// "No water" -> water must not appear
+function checkExclusions(items: Item[], extraction: Extraction, violations: string[]) {
+  for (const item of items) {
+    if (extraction.excludeSkus.includes(item.sku)) {
+      violations.push(item.sku + " was excluded by the customer");
+    }
+  }
+}
+
+// "At least one case of mango" -> mango present with quantity >= 1
+function checkRequiredMinimums(items: Item[], extraction: Extraction, violations: string[]) {
+  for (const requirement of extraction.required) {
+    let quantity = 0;
+    for (const item of items) {
+      if (item.sku === requirement.sku) {
+        quantity = item.quantity;
+      }
+    }
+    if (quantity < requirement.minQty) {
+      violations.push(requirement.sku + " needs at least " + requirement.minQty + " but got " + quantity);
+    }
+  }
+}

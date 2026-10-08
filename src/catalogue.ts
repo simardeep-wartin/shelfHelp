@@ -21,3 +21,13 @@ export const CATALOGUE: Product[] = [
   { sku: "WATER", name: "Drinking water", price: 100, stock: 10 },
   { sku: "BERRY", name: "Berry fizz", price: 400, stock: 0 },
 ];
+
+// Look up a product by its SKU. Returns undefined if we don't sell it.
+export function findProduct(sku: string): Product | undefined {
+  for (const product of CATALOGUE) {
+    if (product.sku === sku) {
+      return product;
+    }
+  }
+  return undefined;
+}
