@@ -53,7 +53,7 @@ The assignment allows Python or TypeScript.
 
 **Decision: Shelf Help is implemented in TypeScript.**
 
-See §14.1 for how the Python-based run command is supported.
+See §14.1: the one command runs TypeScript directly with `tsx`; no Python is used.
 
 ## 2.3 Model
 
@@ -509,11 +509,11 @@ npx tsx run.ts requests.json > responses.json
 | Concern              | Choice                                            |
 | -------------------- | ------------------------------------------------- |
 | Language             | TypeScript                                        |
-| Runtime              | Node.js 18+ via `tsx` (no build step)             |
+| Runtime              | Node.js 22.12+ via `tsx` (no build step)          |
 | Schema validation    | `zod` (LLM extraction output and final response)  |
 | Unit tests           | `vitest` (deterministic rule tests, no LLM calls) |
 | Evals                | `npm run eval` (each case run 5×, pass rate shown) |
-| LLM provider         | OpenAI GPT-5.5 (`openai` SDK, structured outputs, low reasoning effort), isolated behind `src/llm.ts` |
+| LLM provider         | OpenAI GPT-5.5 (`openai` SDK, structured outputs, medium reasoning effort), isolated behind `src/llm.ts` |
 
 ---
 
@@ -585,7 +585,7 @@ The project therefore needs:
 
 Clean-machine prerequisites for the TypeScript implementation:
 
-* Node.js 18+ and npm.
+* Node.js 22.12+ and npm (required by the `openai` SDK and `vitest`).
 * `npm install`.
 * `OPENAI_API_KEY` supplied via environment variable / `.env` (with a committed `.env.example`, never a real key).
 
