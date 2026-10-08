@@ -38,6 +38,7 @@ export function checkOrderRules(items: Item[], total: number, extraction: Extrac
   checkExclusions(items, extraction, violations);
   checkRequiredMinimums(items, extraction, violations);
   checkRequiredMaximums(items, extraction, violations);
+  checkNamedProductsOnly(items, extraction, violations);
   return violations;
 }
 
@@ -126,6 +127,22 @@ function checkRequiredMinimums(items: Item[], extraction: Extraction, violations
     }
     if (quantity < requirement.minQty) {
       violations.push(requirement.sku + " needs at least " + requirement.minQty + " but got " + quantity);
+    }
+  }
+}
+
+// "Mango and lime" (nothing else invited) -> only mango and lime may be in the order
+function checkNamedProductsOnly(items: Item[], extraction: Extraction, violations: string[]) {
+  if (extraction.invitesOtherProducts || extraction.required.length === 0) {
+    return; // customer is open to other products, or named none
+  }
+  const namedSkus: string[] = [...extraction.onlySkus];
+  for (const requirement of extraction.required) {
+    namedSkus.push(requirement.sku);
+  }
+  for (const item of items) {
+    if (!namedSkus.includes(item.sku)) {
+      violations.push(item.sku + " was not asked for (customer named only " + namedSkus.join(", ") + ")");
     }
   }
 }

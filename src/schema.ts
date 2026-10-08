@@ -34,6 +34,9 @@ export const ExtractionSchema = z.object({
     }),
   ),
   unknownProducts: z.array(z.string()), // products we don't sell, e.g. "Pepsi"
+  // false when the customer just lists what they want ("mango and lime"),
+  // true when they are open to more ("a mix", "fill the rest", "anything else")
+  invitesOtherProducts: z.boolean(),
 });
 
 export type Extraction = z.infer<typeof ExtractionSchema>;

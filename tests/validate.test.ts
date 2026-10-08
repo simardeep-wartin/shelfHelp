@@ -11,6 +11,7 @@ function makeExtraction(overrides: Partial<Extraction> = {}): Extraction {
     excludeSkus: [],
     required: [],
     unknownProducts: [],
+    invitesOtherProducts: true,
     ...overrides,
   };
 }
@@ -107,5 +108,15 @@ describe("validateResponse", () => {
     const order = { ...validOrder, items: [{ sku: "LIME", quantity: 4 }], total: 800 };
     const violations = validateResponse(order, makeExtraction({ required: [{ sku: "LIME", minQty: 2, maxQty: 2 }] }));
     expect(violations).toEqual(["LIME allows at most 2 but got 4"]);
+  });
+
+  it("rejects a product the customer did not name when no others were invited", () => {
+    const extraction = makeExtraction({ required: [{ sku: "MANGO", minQty: 1, maxQty: null }], invitesOtherProducts: false });
+    expect(validateResponse(validOrder, extraction)).toEqual(["LIME was not asked for (customer named only MANGO)"]);
+  });
+
+  it("allows other products when the customer invited them", () => {
+    const extraction = makeExtraction({ required: [{ sku: "MANGO", minQty: 1, maxQty: null }], invitesOtherProducts: true });
+    expect(validateResponse(validOrder, extraction)).toEqual([]);
   });
 });

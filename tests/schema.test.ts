@@ -77,6 +77,7 @@ describe("ExtractionSchema", () => {
       excludeSkus: ["WATER"],
       required: [{ sku: "MANGO", minQty: 1, maxQty: null }],
       unknownProducts: [],
+      invitesOtherProducts: true,
     };
     expect(ExtractionSchema.safeParse(extraction).success).toBe(true);
   });
@@ -89,6 +90,7 @@ describe("ExtractionSchema", () => {
       excludeSkus: [],
       required: [],
       unknownProducts: [],
+      invitesOtherProducts: true,
     };
     expect(ExtractionSchema.safeParse(extraction).success).toBe(false);
   });

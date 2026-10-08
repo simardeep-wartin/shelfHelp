@@ -11,6 +11,7 @@ function makeExtraction(overrides: Partial<Extraction> = {}): Extraction {
     excludeSkus: [],
     required: [],
     unknownProducts: [],
+    invitesOtherProducts: true,
     ...overrides,
   };
 }

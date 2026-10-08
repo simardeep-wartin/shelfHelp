@@ -13,6 +13,7 @@ describe("handleRequest", () => {
         excludeSkus: [],
         required: [],
         unknownProducts: [],
+        invitesOtherProducts: true,
       });
     const response = await handleRequest("r1", "₹500. Only water.", fakeModel);
     expect(response).toMatchObject({ status: "recommendation", items: [{ sku: "WATER", quantity: 5 }], total: 500 });

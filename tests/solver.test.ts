@@ -11,6 +11,7 @@ function makeExtraction(overrides: Partial<Extraction> = {}): Extraction {
     excludeSkus: [],
     required: [],
     unknownProducts: [],
+    invitesOtherProducts: true,
     ...overrides,
   };
 }
@@ -59,6 +60,21 @@ describe("solve", () => {
   it("exact quantity: just 2 lime, even with budget left over", () => {
     const items = solve(makeExtraction({ onlySkus: ["LIME"], required: [{ sku: "LIME", minQty: 2, maxQty: 2 }] }));
     expect(items).toEqual([{ sku: "LIME", quantity: 2 }]);
+  });
+
+  it("named products only: 'mango and lime' never adds water", () => {
+    const items = solve(
+      makeExtraction({
+        required: [
+          { sku: "MANGO", minQty: 1, maxQty: null },
+          { sku: "LIME", minQty: 1, maxQty: null },
+        ],
+        invitesOtherProducts: false,
+      }),
+    );
+    expect(items).not.toBeNull();
+    expect(quantityOf(items!, "WATER")).toBe(0);
+    expect(orderTotal(items!)).toBe(900);
   });
 
   it("budget too small for anything: returns null", () => {

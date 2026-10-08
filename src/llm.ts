@@ -34,9 +34,9 @@ Fill the fields like this:
   - A stated quantity is exact: "2 mango", "just 2 cases of lime", "exactly 3 water" -> minQty and maxQty both that number.
   - A product named without a quantity ("with mango", "mango and lime") -> minQty 1, maxQty null.
   - Copy the number the retailer asked for even if it is huge.
-  - If the retailer gives exact quantities and does not ask to fill the budget or add a mix, also put those SKUs in onlySkus.
   - A product wanted only if available ("X if available, otherwise Y", "preferably X", "X if you have it") is NOT required. Put X and its alternatives in onlySkus instead, e.g. "berry if available, otherwise lime" -> onlySkus [BERRY, LIME], required [].
 - unknownProducts: specific products the retailer asks for that are NOT in the catalogue (e.g. "Pepsi", "orange juice"), in the retailer's words. Do not list generic words like "drinks" or "a mix".
+- invitesOtherProducts: false if the retailer simply lists the products they want ("mango and lime", "2 cases of water", "mango and lime, at least one of each"). true if they are open to products they did not name ("a mix", "fill the rest", "anything else", "suggest an order with mango", "and some other drinks") or name no products at all.
 
 Map product names to SKUs even if the product may be out of stock. A general request like "suggest a mix of drinks" has no only, exclude or required products.`;
 
@@ -131,7 +131,7 @@ async function callOpenAI(text: string): Promise<string> {
   const client = new OpenAI({ timeout: TIMEOUT_MS, maxRetries: 0 });
   const response = await client.responses.create({
     model: process.env.OPENAI_MODEL || "gpt-5.5",
-    reasoning: { effort: "low" },
+    reasoning: { effort: "medium" }, // "low" occasionally dropped a stated quantity
     instructions: SYSTEM_PROMPT,
     input: text,
     text: { format: zodTextFormat(ExtractionSchema, "extraction") },
