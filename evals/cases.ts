@@ -55,7 +55,44 @@ export const EVAL_CASES: EvalCase[] = [
     caught: "1/5 before the fix: cannot_fulfil. The model marked berry as required, and code refuses an out-of-stock required product. Fixed in the prompt: 'if available' products are not required.",
   },
 
+  {
+    name: "found: 'as much X as possible'",
+    text: "Budget is 800. As much water as possible.",
+    checks: [status("recommendation"), exactly("WATER", 8), onlyFrom("WATER")],
+    caught: "Found by a 20-request hidden-test probe: returned mango, lime and only 1 water. The model did not extract water at all, so the solver used its default mix. Fixed in the prompt: 'as much X as possible' restricts the order to X.",
+  },
+  {
+    name: "found: empty request",
+    text: "",
+    checks: [status("clarification")],
+    caught: "Returned the 'couldn't process' fallback: the empty text was sent to OpenAI, which rejects empty input with a 400. Fixed in code: a blank request gets a clarification without calling the model.",
+  },
+
+  {
+    name: "found: customer doesn't want an order",
+    text: "₹900. I don't want to order anything today.",
+    checks: [status("clarification")],
+    caught: "0/5 before the fix: recommended a ₹900 order. The extraction had no way to say 'no order', so a budget alone looked like a normal request ('Don't give me anything' did the same 2/5). Fixed: the model reports wantsOrder, code returns a clarification and the validator rejects any order when it is false.",
+  },
+
+  {
+    name: "found: price question with a budget",
+    text: "₹900. What is the price of mango?",
+    checks: [status("clarification")],
+    caught: "Recommended a ₹900 order: with a budget present the model treated a question as an order. Fixed in the prompt: a question means wantsOrder=false even with a budget, and the clarification lists catalogue prices.",
+  },
+
   // ---------- More coverage ----------
+  {
+    name: "unknown product next to one we sell",
+    text: "₹700. Water and Pepsi.",
+    checks: [status("recommendation"), includes("WATER"), onlyFrom("WATER"), totalAtMost(700)],
+  },
+  {
+    name: "approximate budget is used as the budget",
+    text: "Around ₹600, mango please.",
+    checks: [status("recommendation"), includes("MANGO"), totalAtMost(600)],
+  },
   {
     name: "headline: ₹900 mix",
     text: "I have ₹900. Suggest a mix of drinks for my next order.",
