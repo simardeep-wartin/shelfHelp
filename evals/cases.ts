@@ -5,6 +5,7 @@
 // so a bug in our validator cannot hide a bug in the system.
 import { CATALOGUE } from "../src/catalogue";
 import { ResponseSchema, type OrderResponse } from "../src/schema";
+import { fallbackResponse } from "../src/assistant";
 
 // A check returns null when it passes, or a short reason when it fails
 type Check = (response: OrderResponse) => string | null;
@@ -122,6 +123,11 @@ export const EVAL_CASES: EvalCase[] = [
 // always run, so no case can pass with an invalid response or an invented product/price.
 export function runChecks(evalCase: EvalCase, response: OrderResponse): string[] {
   const failures: string[] = [];
+  // The safe fallback means the pipeline failed (API down, bad output). Never count that
+  // as a pass, even for cases that expect cannot_fulfil.
+  if (response.message === fallbackResponse().message) {
+    failures.push("pipeline failed and returned the fallback (see eval.log)");
+  }
   if (!ResponseSchema.safeParse(response).success) {
     failures.push("response does not match the schema");
   }
@@ -140,23 +146,23 @@ export function runChecks(evalCase: EvalCase, response: OrderResponse): string[]
 // ---------- Check builders ----------
 
 // status("recommendation") or status("recommendation", "clarification") for "either is fine"
-function status(...allowed: string[]): Check {
+export function status(...allowed: string[]): Check {
   return (response) => {
     if (allowed.includes(response.status)) return null;
     return "status is " + response.status + ", expected " + allowed.join(" or ") + " (" + response.message + ")";
   };
 }
 
-function includes(sku: string): Check {
+export function includes(sku: string): Check {
   return (response) => (quantityOf(response, sku) >= 1 ? null : sku + " missing");
 }
 
-function excludes(sku: string): Check {
+export function excludes(sku: string): Check {
   return (response) => (quantityOf(response, sku) === 0 ? null : sku + " should not be included");
 }
 
 // Every item must be one of these SKUs
-function onlyFrom(...skus: string[]): Check {
+export function onlyFrom(...skus: string[]): Check {
   return (response) => {
     for (const item of response.items) {
       if (!skus.includes(item.sku)) return item.sku + " added, expected only " + skus.join(", ");
@@ -165,30 +171,30 @@ function onlyFrom(...skus: string[]): Check {
   };
 }
 
-function exactly(sku: string, quantity: number): Check {
+export function exactly(sku: string, quantity: number): Check {
   return (response) => {
     const actual = quantityOf(response, sku);
     return actual === quantity ? null : "expected exactly " + quantity + " " + sku + ", got " + actual;
   };
 }
 
-function atMost(sku: string, quantity: number): Check {
+export function atMost(sku: string, quantity: number): Check {
   return (response) => {
     const actual = quantityOf(response, sku);
     return actual <= quantity ? null : "expected at most " + quantity + " " + sku + ", got " + actual;
   };
 }
 
-function totalAtMost(budget: number): Check {
+export function totalAtMost(budget: number): Check {
   return (response) => (response.total <= budget ? null : "total " + response.total + " is over ₹" + budget);
 }
 
-function distinctAtLeast(count: number): Check {
+export function distinctAtLeast(count: number): Check {
   return (response) =>
     response.items.length >= count ? null : "expected at least " + count + " different products, got " + response.items.length;
 }
 
-function asksForBudget(response: OrderResponse): string | null {
+export function asksForBudget(response: OrderResponse): string | null {
   return response.message.toLowerCase().includes("budget") ? null : "message does not ask for the budget";
 }
 
