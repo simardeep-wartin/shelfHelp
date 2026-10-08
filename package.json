@@ -10,6 +10,7 @@
   "scripts": {
     "test": "vitest run",
     "eval": "tsx evals/run-evals.ts 2> eval.log",
+    "eval:catalogue": "vitest run --config vitest.eval.config.ts 2> eval.log",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

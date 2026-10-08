@@ -52,7 +52,11 @@ Output, one response per request:
 ```bash
 npm test          # unit tests for every rule, solver, decisions, retries (no API calls)
 npm run eval      # 18 eval cases x 5 runs each against the real model, prints pass rates
+npm run eval:catalogue   # real model against a swapped-in catalogue (COLA, JUICE, SODA)
 ```
+
+`npm test` also runs the system against a swapped-in catalogue (`tests/dynamic-catalogue.test.ts`),
+so a hardcoded product name or SKU anywhere in `src/` fails the tests.
 
 `npm run eval` writes the pipeline logs to `eval.log` and exits non-zero if any run fails.
 It takes about 1.5 minutes.
@@ -80,6 +84,12 @@ customer text
 | `src/assistant.ts` | the pipeline for one request, with a safe fallback |
 | `evals/` | eval cases (property checks) and the 5x runner |
 | `tests/` | unit tests |
+
+## Changing the catalogue
+
+Edit only `src/catalogue.ts`: add the SKU to `SKUS` and the product to `CATALOGUE`.
+The prompt, solver, validator and messages all read from it. `npm test` fails if the two
+lists don't match. Unit tests and evals that expect today's products will need updating.
 
 ## Adding a business rule
 
