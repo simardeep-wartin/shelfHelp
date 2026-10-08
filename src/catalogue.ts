@@ -3,6 +3,7 @@
 // Nothing the customer or the model says can change these values.
 
 // Every SKU we sell. "as const" makes TypeScript treat these as fixed values, not any string.
+// Must list exactly the SKUs in CATALOGUE below (tests/catalogue.test.ts checks this).
 export const SKUS = ["MANGO", "LIME", "WATER", "BERRY"] as const;
 
 // Sku is one of: "MANGO" | "LIME" | "WATER" | "BERRY"

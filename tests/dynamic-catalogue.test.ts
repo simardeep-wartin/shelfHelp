@@ -19,6 +19,7 @@ function makeExtraction(overrides: object = {}) {
     required: [],
     unknownProducts: [],
     invitesOtherProducts: true,
+    wantsOrder: true,
     ...overrides,
   });
 }
