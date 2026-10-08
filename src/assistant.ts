@@ -10,6 +10,12 @@ import { log } from "./log";
 import type { Extraction, OrderResponse } from "./schema";
 
 export async function handleRequest(requestId: string, text: string, callModel?: CallModel): Promise<OrderResponse> {
+  // 0. Nothing to understand (the API also rejects empty input) -> ask
+  if (text.trim() === "") {
+    log("request_ok", { requestId, status: "clarification", reason: "empty request" });
+    return { status: "clarification", items: [], total: 0, message: "What would you like to order, and what is your budget?" };
+  }
+
   // 1. Understand the request (the only step that uses the LLM)
   let extraction: Extraction;
   try {

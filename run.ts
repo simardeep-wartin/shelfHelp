@@ -3,7 +3,7 @@
 // Reads a JSON list of { id, text } requests and prints one { id, response } per request.
 // Only the final JSON goes to stdout; all logs go to stderr.
 import { readFileSync } from "node:fs";
-import { RequestFileSchema, type OrderResponse } from "./src/schema";
+import { RequestSchema, type OrderResponse } from "./src/schema";
 import { handleRequest, fallbackResponse } from "./src/assistant";
 import { log } from "./src/log";
 
@@ -14,19 +14,32 @@ async function main() {
     process.exit(1);
   }
 
-  // Read and check the input file
-  let requests;
+  // Read the input file. It must be a JSON list.
+  let entries: unknown[];
   try {
     const fileText = readFileSync(filePath, "utf8").replace(/^﻿/, ""); // drop a BOM that Windows editors sometimes add
-    requests = RequestFileSchema.parse(JSON.parse(fileText));
+    const json = JSON.parse(fileText);
+    if (!Array.isArray(json)) {
+      throw new Error("expected a JSON list of requests");
+    }
+    entries = json;
   } catch (error) {
     log("bad_input_file", { filePath, error: String(error) });
     process.exit(1);
   }
 
-  // Handle requests one at a time. One failing request never stops the rest.
-  const results: { id: string; response: OrderResponse }[] = [];
-  for (const request of requests) {
+  // Handle requests one at a time. One bad or failing request never stops the rest.
+  const results: { id: unknown; response: OrderResponse }[] = [];
+  for (const entry of entries) {
+    const parsed = RequestSchema.safeParse(entry);
+    if (!parsed.success) {
+      // e.g. missing "text": still answer, so there is one response per request
+      log("bad_request", { entry, error: parsed.error.message });
+      results.push({ id: idOf(entry), response: fallbackResponse() });
+      continue;
+    }
+
+    const request = parsed.data;
     let response: OrderResponse;
     try {
       response = await handleRequest(request.id, request.text);
@@ -38,6 +51,14 @@ async function main() {
   }
 
   process.stdout.write(JSON.stringify(results, null, 2) + "\n");
+}
+
+// Keep whatever id a malformed entry had, so its response still lines up with it
+function idOf(entry: unknown): unknown {
+  if (typeof entry === "object" && entry !== null && "id" in entry) {
+    return entry.id;
+  }
+  return null;
 }
 
 main();

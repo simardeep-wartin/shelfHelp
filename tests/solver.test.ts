@@ -12,6 +12,7 @@ function makeExtraction(overrides: Partial<Extraction> = {}): Extraction {
     required: [],
     unknownProducts: [],
     invitesOtherProducts: true,
+    wantsOrder: true,
     ...overrides,
   };
 }

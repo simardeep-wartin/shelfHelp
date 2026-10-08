@@ -12,6 +12,7 @@ function makeExtraction(overrides: Partial<Extraction> = {}): Extraction {
     required: [],
     unknownProducts: [],
     invitesOtherProducts: true,
+    wantsOrder: true,
     ...overrides,
   };
 }
@@ -39,6 +40,12 @@ describe("validateResponse", () => {
 
   it("rejects malformed output", () => {
     expect(validateResponse("not json at all", makeExtraction()).length).toBeGreaterThan(0);
+  });
+
+  it("rejects an order when the customer doesn't want one", () => {
+    expect(validateResponse(validOrder, makeExtraction({ wantsOrder: false }))).toEqual([
+      "recommended an order but the customer doesn't want one",
+    ]);
   });
 
   it("rejects an order when the budget is missing", () => {

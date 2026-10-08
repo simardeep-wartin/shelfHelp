@@ -29,6 +29,7 @@ export function validateResponse(rawResponse: unknown, extraction: Extraction): 
 // so adding a rule here stops the solver from ever proposing an order that breaks it.
 export function checkOrderRules(items: Item[], total: number, extraction: Extraction): string[] {
   const violations: string[] = [];
+  checkOrderWanted(extraction, violations);
   checkBudgetIsKnown(extraction, violations);
   checkNoDuplicateSkus(items, violations);
   checkInStock(items, violations);
@@ -40,6 +41,13 @@ export function checkOrderRules(items: Item[], total: number, extraction: Extrac
   checkRequiredMaximums(items, extraction, violations);
   checkNamedProductsOnly(items, extraction, violations);
   return violations;
+}
+
+// "Nothing for now" -> no order at all
+function checkOrderWanted(extraction: Extraction, violations: string[]) {
+  if (!extraction.wantsOrder) {
+    violations.push("recommended an order but the customer doesn't want one");
+  }
 }
 
 // We must never recommend an order without a clear budget

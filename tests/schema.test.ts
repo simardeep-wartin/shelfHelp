@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ResponseSchema, ExtractionSchema, RequestFileSchema } from "../src/schema";
+import { ResponseSchema, ExtractionSchema, RequestSchema } from "../src/schema";
 
 describe("ResponseSchema", () => {
   it("accepts a valid recommendation", () => {
@@ -78,6 +78,7 @@ describe("ExtractionSchema", () => {
       required: [{ sku: "MANGO", minQty: 1, maxQty: null }],
       unknownProducts: [],
       invitesOtherProducts: true,
+      wantsOrder: true,
     };
     expect(ExtractionSchema.safeParse(extraction).success).toBe(true);
   });
@@ -91,19 +92,20 @@ describe("ExtractionSchema", () => {
       required: [],
       unknownProducts: [],
       invitesOtherProducts: true,
+      wantsOrder: true,
     };
     expect(ExtractionSchema.safeParse(extraction).success).toBe(false);
   });
 });
 
-describe("RequestFileSchema", () => {
-  it("accepts a list of requests", () => {
-    const requests = [{ id: "r1", text: "₹500. Only water." }];
-    expect(RequestFileSchema.safeParse(requests).success).toBe(true);
+describe("RequestSchema", () => {
+  it("accepts a request", () => {
+    const request = { id: "r1", text: "₹500. Only water." };
+    expect(RequestSchema.safeParse(request).success).toBe(true);
   });
 
   it("rejects a request without text", () => {
-    const requests = [{ id: "r1" }];
-    expect(RequestFileSchema.safeParse(requests).success).toBe(false);
+    const request = { id: "r1" };
+    expect(RequestSchema.safeParse(request).success).toBe(false);
   });
 });

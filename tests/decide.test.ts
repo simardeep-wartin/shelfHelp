@@ -12,6 +12,7 @@ function makeExtraction(overrides: Partial<Extraction> = {}): Extraction {
     required: [],
     unknownProducts: [],
     invitesOtherProducts: true,
+    wantsOrder: true,
     ...overrides,
   };
 }
@@ -82,9 +83,61 @@ describe("respond", () => {
     expect(response.message).toContain("Pepsi");
   });
 
+  it("unknown product next to one we sell: recommends ours and mentions the unknown one", () => {
+    const response = respondAndValidate(
+      makeExtraction({
+        budget: 700,
+        required: [{ sku: "WATER", minQty: 1, maxQty: null }],
+        unknownProducts: ["Pepsi"],
+        invitesOtherProducts: false,
+      }),
+    );
+    expect(response).toMatchObject({ status: "recommendation", items: [{ sku: "WATER", quantity: 7 }], total: 700 });
+    expect(response.message).toContain("We don't stock Pepsi");
+  });
+
   it("required out-of-stock product: cannot_fulfil", () => {
     const response = respondAndValidate(makeExtraction({ required: [{ sku: "BERRY", minQty: 1, maxQty: null }] }));
     expect(response.status).toBe("cannot_fulfil");
+  });
+
+  it("customer doesn't want an order: clarification, no items, lists what we sell", () => {
+    const response = respondAndValidate(makeExtraction({ wantsOrder: false }));
+    expect(response.status).toBe("clarification");
+    expect(response.items).toEqual([]);
+    expect(response.message).toContain("Mango drink (₹300)");
+  });
+
+  it("negative budget: asks to confirm it", () => {
+    const response = respondAndValidate(makeExtraction({ budget: -500 }));
+    expect(response.status).toBe("clarification");
+  });
+
+  it("product both requested and excluded: asks which they meant", () => {
+    const response = respondAndValidate(
+      makeExtraction({ required: [{ sku: "MANGO", minQty: 1, maxQty: null }], excludeSkus: ["MANGO"] }),
+    );
+    expect(response.status).toBe("clarification");
+    expect(response.message).toContain("Mango drink");
+  });
+
+  it("only an upper limit on an out-of-stock product: not a stock problem", () => {
+    const response = respondAndValidate(makeExtraction({ required: [{ sku: "BERRY", minQty: 0, maxQty: 2 }] }));
+    expect(response.status).toBe("recommendation");
+  });
+
+  it("required products cost more than the budget: says how much they cost", () => {
+    const response = respondAndValidate(
+      makeExtraction({
+        budget: 400,
+        required: [
+          { sku: "MANGO", minQty: 1, maxQty: null },
+          { sku: "LIME", minQty: 1, maxQty: null },
+        ],
+      }),
+    );
+    expect(response.status).toBe("cannot_fulfil");
+    expect(response.message).toContain("₹500");
   });
 
   it("budget too small: cannot_fulfil", () => {

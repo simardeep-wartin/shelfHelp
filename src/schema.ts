@@ -12,9 +12,6 @@ export const RequestSchema = z.object({
   text: z.string(),
 });
 
-// requests.json is a list of requests
-export const RequestFileSchema = z.array(RequestSchema);
-
 // ---------- What the LLM extracts from the customer's text ----------
 // The model only fills in these fields. There is deliberately no field for
 // price, stock or discount, so the customer cannot change them.
@@ -37,6 +34,8 @@ export const ExtractionSchema = z.object({
   // false when the customer just lists what they want ("mango and lime"),
   // true when they are open to more ("a mix", "fill the rest", "anything else")
   invitesOtherProducts: z.boolean(),
+  // false when the customer doesn't want to order ("nothing for now") or only asks a question
+  wantsOrder: z.boolean(),
 });
 
 export type Extraction = z.infer<typeof ExtractionSchema>;

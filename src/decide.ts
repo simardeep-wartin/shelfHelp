@@ -6,49 +6,64 @@ import type { Extraction, Item, OrderResponse } from "./schema";
 import { solve, orderTotal } from "./solver";
 
 export function respond(extraction: Extraction): OrderResponse {
+  // 0. Customer doesn't want an order right now -> don't invent one
+  if (!extraction.wantsOrder) {
+    return clarification(
+      "No order placed. We sell: " + sellableProductNames() + ". Tell me what you'd like and your budget when you're ready.",
+    );
+  }
+
   // 1. No budget, or a vague one -> ask for it instead of guessing
   if (extraction.budget === null) {
     return clarification("What is your budget for this order?");
   }
-  if (extraction.budgetUnclear) {
+  if (extraction.budgetUnclear || extraction.budget < 0) {
     return clarification("Could you confirm your exact budget in rupees?");
   }
 
-  // 2. Customer asked for something we don't sell
-  if (extraction.unknownProducts.length > 0) {
+  // 2. Customer both asked for and excluded the same product -> ask which they meant
+  const conflict = findConflict(extraction);
+  if (conflict !== null) {
+    return clarification(conflict);
+  }
+
+  // 3. Customer asked ONLY for things we don't sell. If they also named products we do sell,
+  //    we carry on with those and mention the rest in the message (step 6).
+  const namedCatalogueProducts = extraction.required.length > 0 || extraction.onlySkus.length > 0;
+  if (extraction.unknownProducts.length > 0 && !namedCatalogueProducts) {
     return cannotFulfil(
       "We don't stock " + extraction.unknownProducts.join(", ") + ". We sell: " + sellableProductNames() + ".",
     );
   }
 
-  // 3. A product the customer insists on can't be supplied
+  // 4. A product the customer insists on can't be supplied
   const stockProblem = findStockProblem(extraction);
   if (stockProblem !== null) {
     return cannotFulfil(stockProblem);
   }
 
-  // 4. Search for the best valid order
+  // 5. Search for the best valid order
   const items = solve(extraction);
   if (items === null) {
-    return cannotFulfil(
-      "No order fits your ₹" + extraction.budget + " budget with these preferences. We sell: " + sellableProductNames() + ".",
-    );
+    return cannotFulfil(explainNoOrder(extraction, extraction.budget));
   }
 
-  // 5. Success
+  // 6. Success
   const total = orderTotal(items);
-  return {
-    status: "recommendation",
-    items: items,
-    total: total,
-    message: "For your ₹" + extraction.budget + " budget: " + describeItems(items) + ". Total ₹" + total + ".",
-  };
+  let message = "For your ₹" + extraction.budget + " budget: " + describeItems(items) + ". Total ₹" + total + ".";
+  if (extraction.unknownProducts.length > 0) {
+    message = message + " We don't stock " + extraction.unknownProducts.join(", ") + ".";
+  }
+  return { status: "recommendation", items: items, total: total, message: message };
 }
 
 // Returns a reason if a required or "only" product can't be supplied, otherwise null.
 function findStockProblem(extraction: Extraction): string | null {
   // Every required product must have enough stock
   for (const requirement of extraction.required) {
+    if (requirement.minQty < 1) {
+      continue; // only an upper limit ("at most 2"), so 0 cases is fine
+    }
     const product = findProduct(requirement.sku)!; // the schema guarantees the SKU exists
     if (product.stock === 0) {
       return product.name + " is out of stock, so this request cannot be fulfilled.";
@@ -76,6 +91,38 @@ function findStockProblem(extraction: Extraction): string | null {
   }
 
   return null;
+}
+
+// Returns a question if a product is both wanted and excluded ("only mango, no mango"), otherwise null.
+function findConflict(extraction: Extraction): string | null {
+  for (const sku of extraction.excludeSkus) {
+    let alsoWanted = extraction.onlySkus.includes(sku);
+    for (const requirement of extraction.required) {
+      if (requirement.sku === sku) {
+        alsoWanted = true;
+      }
+    }
+    if (alsoWanted) {
+      const name = findProduct(sku)!.name;
+      return "You asked for " + name + " but also said not to include it. Should the order include " + name + "?";
+    }
+  }
+  return null;
+}
+
+// Why no valid order exists. Most specific reason first.
+function explainNoOrder(extraction: Extraction, budget: number): string {
+  // What the required minimums alone would cost
+  let minimumCost = 0;
+  for (const requirement of extraction.required) {
+    if (requirement.minQty > 0) {
+      minimumCost = minimumCost + findProduct(requirement.sku)!.price * requirement.minQty;
+    }
+  }
+  if (minimumCost > budget) {
+    return "The products you asked for cost at least ₹" + minimumCost + ", which is over your ₹" + budget + " budget.";
+  }
+  return "No order fits your ₹" + budget + " budget with these preferences. We sell: " + sellableProductNames() + ".";
 }
 
 function clarification(message: string): OrderResponse {

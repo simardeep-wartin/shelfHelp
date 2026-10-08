@@ -10,6 +10,7 @@ const goodOutput = JSON.stringify({
   required: [{ sku: "MANGO", minQty: 1, maxQty: null }],
   unknownProducts: [],
   invitesOtherProducts: true,
+  wantsOrder: true,
 });
 
 // A fake model that returns (or throws) the given replies in order, and counts calls
