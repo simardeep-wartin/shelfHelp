@@ -2,7 +2,7 @@
 // Runs every eval case 5 times through the real pipeline (real LLM) and reports
 // the pass rate, because one lucky run proves nothing about reliability.
 // Pipeline logs (stderr) are saved to eval.log by the npm script.
-import { EVAL_CASES } from "./cases";
+import { EVAL_CASES, runChecks } from "./cases";
 import { handleRequest } from "../src/assistant";
 
 const RUNS_PER_CASE = 5;
@@ -20,7 +20,7 @@ async function main() {
     const runs: Promise<string[]>[] = [];
     for (let run = 1; run <= RUNS_PER_CASE; run++) {
       const requestId = "eval" + (caseIndex + 1) + "-run" + run;
-      runs.push(handleRequest(requestId, evalCase.text).then(evalCase.check));
+      runs.push(handleRequest(requestId, evalCase.text).then((response) => runChecks(evalCase, response)));
     }
     const failuresPerRun = await Promise.all(runs);
 
