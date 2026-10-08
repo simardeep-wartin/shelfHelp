@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "eval": "tsx evals/run-evals.ts",
+    "eval": "tsx evals/run-evals.ts 2> eval.log",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
