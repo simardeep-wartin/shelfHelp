@@ -7,7 +7,7 @@ const goodOutput = JSON.stringify({
   budgetUnclear: false,
   onlySkus: [],
   excludeSkus: [],
-  required: [{ sku: "MANGO", minQty: 1 }],
+  required: [{ sku: "MANGO", minQty: 1, maxQty: null }],
   unknownProducts: [],
 });
 

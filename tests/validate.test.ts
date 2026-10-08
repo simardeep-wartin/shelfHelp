@@ -94,12 +94,18 @@ describe("validateResponse", () => {
   });
 
   it("rejects an order missing a required minimum", () => {
-    const violations = validateResponse(validOrder, makeExtraction({ required: [{ sku: "MANGO", minQty: 2 }] }));
+    const violations = validateResponse(validOrder, makeExtraction({ required: [{ sku: "MANGO", minQty: 2, maxQty: null }] }));
     expect(violations).toEqual(["MANGO needs at least 2 but got 1"]);
   });
 
   it("rejects an order missing a required product entirely", () => {
-    const violations = validateResponse(validOrder, makeExtraction({ required: [{ sku: "WATER", minQty: 1 }] }));
+    const violations = validateResponse(validOrder, makeExtraction({ required: [{ sku: "WATER", minQty: 1, maxQty: null }] }));
     expect(violations).toEqual(["WATER needs at least 1 but got 0"]);
+  });
+
+  it("rejects an order above a required maximum (exact quantity)", () => {
+    const order = { ...validOrder, items: [{ sku: "LIME", quantity: 4 }], total: 800 };
+    const violations = validateResponse(order, makeExtraction({ required: [{ sku: "LIME", minQty: 2, maxQty: 2 }] }));
+    expect(violations).toEqual(["LIME allows at most 2 but got 4"]);
   });
 });

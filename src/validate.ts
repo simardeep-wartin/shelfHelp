@@ -37,6 +37,7 @@ export function checkOrderRules(items: Item[], total: number, extraction: Extrac
   checkOnlyPreference(items, extraction, violations);
   checkExclusions(items, extraction, violations);
   checkRequiredMinimums(items, extraction, violations);
+  checkRequiredMaximums(items, extraction, violations);
   return violations;
 }
 
@@ -125,6 +126,20 @@ function checkRequiredMinimums(items: Item[], extraction: Extraction, violations
     }
     if (quantity < requirement.minQty) {
       violations.push(requirement.sku + " needs at least " + requirement.minQty + " but got " + quantity);
+    }
+  }
+}
+
+// "Exactly 2 cases of lime" -> no more than 2 lime
+function checkRequiredMaximums(items: Item[], extraction: Extraction, violations: string[]) {
+  for (const requirement of extraction.required) {
+    if (requirement.maxQty === null) {
+      continue; // no upper limit
+    }
+    for (const item of items) {
+      if (item.sku === requirement.sku && item.quantity > requirement.maxQty) {
+        violations.push(requirement.sku + " allows at most " + requirement.maxQty + " but got " + item.quantity);
+      }
     }
   }
 }

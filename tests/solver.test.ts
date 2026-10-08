@@ -46,14 +46,19 @@ describe("solve", () => {
     const items = solve(
       makeExtraction({
         required: [
-          { sku: "MANGO", minQty: 1 },
-          { sku: "LIME", minQty: 1 },
+          { sku: "MANGO", minQty: 1, maxQty: null },
+          { sku: "LIME", minQty: 1, maxQty: null },
         ],
       }),
     );
     expect(items).not.toBeNull();
     expect(quantityOf(items!, "MANGO")).toBeGreaterThanOrEqual(1);
     expect(quantityOf(items!, "LIME")).toBeGreaterThanOrEqual(1);
+  });
+
+  it("exact quantity: just 2 lime, even with budget left over", () => {
+    const items = solve(makeExtraction({ onlySkus: ["LIME"], required: [{ sku: "LIME", minQty: 2, maxQty: 2 }] }));
+    expect(items).toEqual([{ sku: "LIME", quantity: 2 }]);
   });
 
   it("budget too small for anything: returns null", () => {
@@ -65,7 +70,7 @@ describe("solve", () => {
   });
 
   it("minimum above stock (100 mango): returns null", () => {
-    expect(solve(makeExtraction({ required: [{ sku: "MANGO", minQty: 100 }] }))).toBeNull();
+    expect(solve(makeExtraction({ required: [{ sku: "MANGO", minQty: 100, maxQty: null }] }))).toBeNull();
   });
 
   it("huge budget: never exceeds stock", () => {

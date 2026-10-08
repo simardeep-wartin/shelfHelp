@@ -75,7 +75,7 @@ describe("ExtractionSchema", () => {
       budgetUnclear: false,
       onlySkus: [],
       excludeSkus: ["WATER"],
-      required: [{ sku: "MANGO", minQty: 1 }],
+      required: [{ sku: "MANGO", minQty: 1, maxQty: null }],
       unknownProducts: [],
     };
     expect(ExtractionSchema.safeParse(extraction).success).toBe(true);

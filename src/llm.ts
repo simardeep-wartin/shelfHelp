@@ -29,7 +29,13 @@ Fill the fields like this:
 - budgetUnclear: true if the budget is a range ("500-800"), approximate ("around 500", "about 500"), contradictory, or not a clear rupee amount. Otherwise false. "Up to ₹500", "max ₹500", "under ₹500" are clear (budget 500).
 - onlySkus: SKUs the retailer restricts the order to ("only mango", "just water", "nothing but lime", "berry, no substitutes"). Empty if there is no restriction.
 - excludeSkus: SKUs the retailer does not want ("no water", "without lime", "anything except mango").
-- required: SKUs the retailer explicitly asks to include, with minQty. "at least 2 mango" -> minQty 2. "3 cases of lime" -> minQty 3. A product named without a quantity ("with mango", "mango and lime") -> minQty 1. Copy the number the retailer asked for even if it is huge.
+- required: SKUs the retailer explicitly asks to include, with minQty and maxQty (maxQty null = no upper limit).
+  - "at least 2 mango" -> minQty 2, maxQty null.
+  - A stated quantity is exact: "2 mango", "just 2 cases of lime", "exactly 3 water" -> minQty and maxQty both that number.
+  - A product named without a quantity ("with mango", "mango and lime") -> minQty 1, maxQty null.
+  - Copy the number the retailer asked for even if it is huge.
+  - If the retailer gives exact quantities and does not ask to fill the budget or add a mix, also put those SKUs in onlySkus.
+  - A product wanted only if available ("X if available, otherwise Y", "preferably X", "X if you have it") is NOT required. Put X and its alternatives in onlySkus instead, e.g. "berry if available, otherwise lime" -> onlySkus [BERRY, LIME], required [].
 - unknownProducts: specific products the retailer asks for that are NOT in the catalogue (e.g. "Pepsi", "orange juice"), in the retailer's words. Do not list generic words like "drinks" or "a mix".
 
 Map product names to SKUs even if the product may be out of stock. A general request like "suggest a mix of drinks" has no only, exclude or required products.`;

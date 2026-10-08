@@ -25,10 +25,12 @@ export const ExtractionSchema = z.object({
   onlySkus: z.array(SkuSchema), // "only mango" -> ["MANGO"]
   excludeSkus: z.array(SkuSchema), // "no water" -> ["WATER"]
   required: z.array(
-    // "at least 2 mango" -> { sku: "MANGO", minQty: 2 }
+    // "at least 2 mango" -> { sku: "MANGO", minQty: 2, maxQty: null }
+    // "exactly 2 mango"  -> { sku: "MANGO", minQty: 2, maxQty: 2 }
     z.object({
       sku: SkuSchema,
       minQty: z.number().int(),
+      maxQty: z.number().int().nullable(), // null = no upper limit
     }),
   ),
   unknownProducts: z.array(z.string()), // products we don't sell, e.g. "Pepsi"
