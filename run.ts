@@ -17,7 +17,10 @@ async function main() {
   // Read the input file. It must be a JSON list.
   let entries: unknown[];
   try {
-    const fileText = readFileSync(filePath, "utf8").replace(/^﻿/, ""); // drop a BOM that Windows editors sometimes add
+    let fileText = readFileSync(filePath, "utf8");
+    if (fileText.charCodeAt(0) === 0xfeff) {
+      fileText = fileText.slice(1); // drop the invisible BOM character that Windows editors sometimes add
+    }
     const json = JSON.parse(fileText);
     if (!Array.isArray(json)) {
       throw new Error("expected a JSON list of requests");
