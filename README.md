@@ -44,8 +44,8 @@ Output, one response per request:
   see why any request failed.
 - If the model or API fails after 3 attempts, that request gets a valid `cannot_fulfil`
   and the rest of the batch continues.
-- On Windows PowerShell 5.1, `>` writes UTF-16. Use Git Bash, or
-  `npx tsx run.ts requests.json | Out-File -Encoding utf8 responses.json`.
+- On Windows PowerShell, `>` re-encodes the output (UTF-16, and `₹` gets garbled). Use Git Bash,
+  or run it through cmd: `cmd /c "npx tsx run.ts requests.json > responses.json"`.
 
 ## Try it interactively
 
